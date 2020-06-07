@@ -12,7 +12,7 @@ arrParaPath = main_pandas.arrParaPath
 strRAMaros_Tmplt = main_pandas.strRAMaros_Tmplt
 arrRAMiCEs_Param = main_pandas.arrRAMiCEs_Param
 strRAMaros_Output = main_pandas.strRAMaros_Output
-strRAMiCEs_output = main_pandas.strRAMiCEs_output
+strRAMiCEs_output = main_pandas.strRAMiCEs_Output
 isBypassValid = main_pandas.isBypassValid
 
 
@@ -74,7 +74,6 @@ dfPBU_RAMiCEs = dfPBU.copy()
 
 
 # #### Get Active Passive Mode from pbuProd and pbuPass
-
 dfPBU['pbuProdSum'] = dfPBU.groupby(dfPBU.index)['pbProd'].transform(pd.Series.cumsum)
 dfPBU['pbuMode'] = ~((dfPBU['pbuProdSum'] > 100) & (dfPBU['pbPassive'] == 'Yes'))
 
@@ -137,7 +136,7 @@ dfRAMaros = dfRAM.set_index('itemUnique').reindex(index=dictTree.keys()).reset_i
 dfRAMaros = pd.concat([dfRAMaros,dfRAM[dfRAM['itemType'].isin([10,11])]],axis=0)
 
 
-# Get Tree Heirarchy to Dict
+# Get Tree Hierarchy to Dict
 srsEquName = dfRAM[dfRAM['itemType'].isin([7])]['itemUnique']
 objWalker = Walker()
 dictTWalks_ID = dict()
@@ -148,14 +147,20 @@ for elemEquName in srsEquName:
     dictTWalks_Tp[elemEquName] = [nodeElem.type for nodeElem in tupTWalk[:-1]]
 
 
-# Org Tree Dict to DataFrame
+# Org Tree Dict to DataFrame for Hierarchy
 arrTWalks_ID = [arrXsect for arrXsect in zip_longest(*dictTWalks_ID.values())]
-arrTWalks_Tp = [arrXsect for arrXsect in zip_longest(*dictTWalks_Tp.values())]
 dfTWalks_strEquName = pd.DataFrame(arrTWalks_ID,columns=dictTWalks_ID.keys()).T
+idxTemp = dfTWalks_strEquName.columns
+dfTWalks_strEquName.columns = idxTemp.astype(str).str.cat(['Level']*len(idxTemp),sep='-')
+dfTWalks_strEquName.index.name = 'Element Description'
+dfTWalks_RAMiCEs = dfTWalks_strEquName.iloc[:,[0,1]]
+
+# Org Tree Dict to DataFrame for Type
+arrTWalks_Tp = [arrXsect for arrXsect in zip_longest(*dictTWalks_Tp.values())]
 dfTWalks_strEquType = pd.DataFrame(arrTWalks_Tp,columns=dictTWalks_Tp.keys()).T
-dfTWalks = pd.concat([dfTWalks_strEquName,dfTWalks_strEquType],axis=1)
-dfTWalks.columns = dfTWalks.columns.astype(str).str.cat(['Level']*len(dfTWalks.columns),sep='-')
-dfTWalks_RAMiCEs = dfTWalks.iloc[:,[0,1]]
+idxTemp = dfTWalks_strEquType.columns
+dfTWalks_strEquType.columns = idxTemp.astype(str).str.cat(['Level']*len(idxTemp),sep='-')
+dfTWalks_strEquType.index.name = 'Element Description'
 
 
 # Get Configuration, Equipment Type and Failure Rate for each equipment
@@ -187,8 +192,10 @@ xlwbMaro.save(f'{strRAMaros_Output}.xlsm')
 # Export to Excel
 strRAMiCEs_output = os.path.join(*arrProjPath, strRAMiCEs_output)
 with pd.ExcelWriter(f'{strRAMiCEs_output}.xlsx') as xwr:
-    dfTWalks.to_excel(xwr,'Layers')
+
     dfRAMiCEs.to_excel(xwr,'CnE')
+    dfTWalks_strEquName.to_excel(xwr, 'Layers')
+    dfTWalks_strEquType.to_excel(xwr, 'Type')
 
 print()
 print(f'{"<>"*15} Check rendered tree generated from RAMiCEs {"<>"*15}')

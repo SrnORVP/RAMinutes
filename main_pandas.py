@@ -13,8 +13,8 @@ strRAMiRes_Input = strProjID + '-RAMresult-26Jan20' + '.xlsx'
 
 # Name of Output Identifier
 strRAMaros_Output = strProjID + '-RAMaros'
-strRAMiCEs_output = strProjID + '-RAMiCEs'
-strRAMiRes_output = strProjID + '-RAMiRes'
+strRAMiCEs_Output = strProjID + '-RAMiCEs'
+strRAMiRes_Output = strProjID + '-RAMiRes'
 
 # Relative path and File name of General Param Inputs
 arrParaPath = ['.']
@@ -22,6 +22,24 @@ strRAMaros_Tmplt = 'RAMaros-Tmplt-10Feb20' + '.xlsm'
 arrRAMiCEs_Param = 'RAMiCEs-Param-30May20' + '.xlsx'
 
 isBypassValid = False
+
+#-----------------------------------------------------------------------------------------------------------------------
+# RAMiRes Param
+
+# Unit of Production as per model (string)
+strProdUnit = 'Units'
+# Unit of Production as per report (string)
+strProdUnitChart = 'MMscfd'
+# Production Target (integer)
+intProdTar = 95
+# the cutoff point for relative availability for Equipment Type Table (number)
+numTypeTableCutOff = 0.05
+
+# if subsystem chart label overlap change this param (number)
+numSubsysChartParam = -60
+
+strSubsysChartLevel = 'L2'
+
 
 #-----------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------
