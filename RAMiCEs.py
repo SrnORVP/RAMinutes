@@ -1,11 +1,12 @@
 
 import pandas as pd, numpy as np, openpyxl as opxl, os, SACusFun as SACF, main_pandas
-from anytree import AnyNode, RenderTree, Walker
+from anytree import AnyNode, RenderTree, Walker, AsciiStyle
 from datetime import datetime
 from itertools import zip_longest
 
 
 strProjID = main_pandas.strProjID
+print(strProjID)
 arrProjPath = main_pandas.arrProjPath
 strRAMiCEs_Input = main_pandas.strRAMiCEs_Input
 arrParaPath = main_pandas.arrParaPath
@@ -14,21 +15,25 @@ arrRAMiCEs_Param = main_pandas.arrRAMiCEs_Param
 strRAMaros_Output = main_pandas.strRAMaros_Output
 strRAMiCEs_output = main_pandas.strRAMiCEs_Output
 isBypassValid = main_pandas.isBypassValid
+isRender = main_pandas.isRender
+isRAMiCEs = main_pandas.isRAMiCEs
 
 
-arrRAMtype = ['eItemNode','eItemGroup','eItemPBlock','eItemPUnit','eItemUnschElmt','eItemUnschFMode']
+arrRAMtype = ['eItemNode', 'eItemGroup', 'eItemPBlock', 'eItemPUnit', 'eItemUnschElmt', 'eItemUnschFMode']
 dictMarosItem = dict(eItemGroup=4, eItemPBlock=5, eItemPUnit=6, eItemUnschElmt=7, eItemSchElmt=9, eItemUnschFMode=10, eItemSchAct=11, eItemNode=47)
 
 strInputFile = os.path.join(*arrProjPath,strRAMiCEs_Input)
-dictExcel_dfRaw = pd.read_excel(strInputFile,None)
+dictExcel_dfRaw = pd.read_excel(strInputFile, None)
 dictExcel_dfItem = dictExcel_dfRaw.copy()
 dfEqu = dictExcel_dfItem['eItemUnschElmt']
 dictExcel_dfItem['eItemUnschElmt'] = dfEqu[dfEqu['equProdLoss'].isin(['yes','Yes','Y','y'])]
-
+dfNonProd = dfEqu[~dfEqu['equProdLoss'].isin(['yes','Yes','Y','y'])]
+dfNonProd = dfNonProd.merge(dictExcel_dfItem['eItemGroup'], how='left',left_on='equSuper',right_on='grpUnique')
+dfPM = dictExcel_dfItem.pop('PM')
 
 # [InputTab, ParamTab, UnityHeader, RAMaroHeader, RAMiCEsHeader, RAMiCEsConfig, RAMiCEsProdLs]
-strInputFile = os.path.join(*arrParaPath,arrRAMiCEs_Param)
-dictExcel_dfParam = pd.read_excel(arrRAMiCEs_Param,None)
+strInputFile = os.path.join(*arrParaPath, arrRAMiCEs_Param)
+dictExcel_dfParam = pd.read_excel(arrRAMiCEs_Param, None)
 
 
 # Check Validity of Uniqueness
@@ -38,6 +43,9 @@ for strItemTable, dfItemTable in dictExcel_dfItem.items():
         arrExcel_srsUnique.append(dfItemTable.iloc[:,1])
 srsUnique = pd.concat(arrExcel_srsUnique,axis=0).value_counts()
 if not isBypassValid:
+    print()
+    print(srsUnique[srsUnique>1])
+    print()
     assert len(srsUnique[srsUnique>1])==0, 'Some items are not unique'
 
 
@@ -45,18 +53,21 @@ if not isBypassValid:
 arrExcel_srsSuper = []
 arrExcel_srsChild = []
 for strItemTable, dfItemTable in dictExcel_dfItem.items():
-    if not strItemTable in ['eItemUnschFMode','eItemUnschElmt']:
+    if strItemTable not in ['eItemUnschFMode','eItemUnschElmt']:
         arrExcel_srsSuper.append(dfItemTable.iloc[:,0])
         arrExcel_srsChild.append(dfItemTable.iloc[:,1])
     if strItemTable in 'eItemUnschElmt':
         arrExcel_srsSuper.append(dfItemTable.iloc[:,0])
         arrExcel_srsChild.append(dfItemTable.iloc[:,4])
-    if strItemTable in 'eItemUnschFMode':
-        arrExcel_srsSuper.append(dfItemTable.iloc[:,0])
+    # if strItemTable in 'eItemUnschFMode':
+    #     arrExcel_srsSuper.append(dfItemTable.iloc[:,0])
 srsSuper = pd.concat(arrExcel_srsSuper,axis=0).str.split(' #',expand=True)[0].dropna().drop_duplicates()
 arrChild = pd.concat(arrExcel_srsChild,axis=0).dropna().drop_duplicates().to_list() + ['Root','root']
 srsSuper = srsSuper[~srsSuper.isin(arrChild)]
 if not isBypassValid:
+    print()
+    print(srsSuper)
+    print()
     assert len(srsSuper)==0, 'Some Super cannot be found'
 
 
@@ -92,7 +103,7 @@ dfFMd = dictExcel_dfItem['eItemUnschElmt'].rename(columns={'equUnique':'fmSuper'
 dfFMd = dfFMd.merge(dictExcel_dfItem['eItemUnschFMode'],'left','equType')
 dfFMd['fmRParam2'] = dfFMd.loc[:,['fmRamp','fmLogis','fmMTTR']].astype(np.float).sum(axis=1)
 dfFMd['fmRParam1'] = np.round(dfFMd['fmRParam2'] * 0.942,2)
-dfFMd['fmUnique'] = pd.Series(range(0,dfFMd.shape[0])).apply((lambda x:'FM' + str(x)))
+dfFMd['fmUnique'] = pd.Series(range(0,dfFMd.shape[0])).apply((lambda x: 'FM' + str(x)))
 
 dictExcel_dfItem['eItemUnschElmt'] = dfEqu
 dictExcel_dfItem['eItemUnschFMode'] = dfFMd
@@ -133,8 +144,8 @@ dictTree = {'Root':AnyNode(id='Root', parent=None, type='Root')}
 for strItem in dfTree.index:
     make_Tree_From_Unsort(dfTree, dictTree, strItem)
 dfRAMaros = dfRAM.set_index('itemUnique').reindex(index=dictTree.keys()).reset_index().reindex(columns=arrRAMarosOrder)
-dfRAMaros = pd.concat([dfRAMaros,dfRAM[dfRAM['itemType'].isin([10,11])]],axis=0)
-
+dfRAMaros = pd.concat([dfRAMaros, dfRAM[dfRAM['itemType'].isin([10, 11])]], axis=0)
+dfRAMaros = dfRAMaros.append(dfPM)
 
 # Get Tree Hierarchy to Dict
 srsEquName = dfRAM[dfRAM['itemType'].isin([7])]['itemUnique']
@@ -164,12 +175,14 @@ dfTWalks_strEquType.index.name = 'Element Description'
 
 
 # Get Configuration, Equipment Type and Failure Rate for each equipment
+# TODO default 1x100 for 1oo1 config
+# TODO TBC for other config not listed
 dfRAMiCEs = dfFMd_RAMiCEs.merge(dfPBU_RAMiCEs,how='left',left_on='equSuper',right_on='pbUnique')
 dfRAMiCEs = dfRAMiCEs.merge(dictExcel_dfParam['RAMiCEsConfig'],how='left',on=['pbTrains','pbProd'])
 dfRAMiCEs = dfRAMiCEs.merge(dictExcel_dfParam['RAMiCEsProdLs'],how='left',on=['pbTrains','pbProd'])
 dfRAMiCEs = dfRAMiCEs.merge(dfTWalks_RAMiCEs,how='left',left_on='fmSuper',right_index=True)
-dfRAMiCEs['equConfig'] = dfRAMiCEs['equConfig'].fillna('1x100%') 
-dfRAMiCEs['equProdLs'] = dfRAMiCEs['equProdLs'].fillna('0%')
+dfRAMiCEs['equConfig'] = dfRAMiCEs['equConfig'].fillna('1x100%')
+dfRAMiCEs['equProdLs'] = dfRAMiCEs['equProdLs'].fillna('1 Failure: 100%')
 
 
 # CleanUp RAMiCEs
@@ -178,11 +191,10 @@ dictHeadMap_RAMiCEs = dictExcel_dfParam['RAMiCEsHeader'].set_index('strHeaderLoo
 dfRAMiCEs = dfRAMiCEs.rename(columns=dictHeadMap_RAMiCEs)
 dfRAMiCEs.columns.name=''
 
-
 # Open RAMaros and Export
 xlwbMaro = opxl.load_workbook(strRAMaros_Tmplt, read_only=False, keep_vba=True)
 xlwsMaro = xlwbMaro['RAMaros']
-SACF.write_pdDF_to_opxlWS(xlwsMaro, dfRAMaros, numColOffSet=1, numRowOffSet=1, isIndexWrite=False)
+SACF.write_pdDF_to_opxlWS(xlwsMaro, dfRAMaros, numColOffSet=0, numRowOffSet=1, isIndexWrite=False)
 
 strTimeNow = datetime.now().strftime("%d%b%y")
 strRAMaros_Output = os.path.join(*arrProjPath, strRAMaros_Output)
@@ -191,16 +203,18 @@ xlwbMaro.save(f'{strRAMaros_Output}.xlsm')
 
 # Export to Excel
 strRAMiCEs_output = os.path.join(*arrProjPath, strRAMiCEs_output)
-with pd.ExcelWriter(f'{strRAMiCEs_output}.xlsx') as xwr:
+if isRAMiCEs:
+    with pd.ExcelWriter(f'{strRAMiCEs_output}.xlsx') as xwr:
+        dfRAMiCEs.to_excel(xwr, 'CnE', index=False)
+        dfNonProd.to_excel(xwr, 'NonProd', index=False)
+        dfTWalks_strEquName.to_excel(xwr, 'Layers')
+        dfTWalks_strEquType.to_excel(xwr, 'Type')
 
-    dfRAMiCEs.to_excel(xwr,'CnE')
-    dfTWalks_strEquName.to_excel(xwr, 'Layers')
-    dfTWalks_strEquType.to_excel(xwr, 'Type')
-
-print()
-print(f'{"<>"*15} Check rendered tree generated from RAMiCEs {"<>"*15}')
-print()
-print(RenderTree(dictTree['Root']))
-print()
-print(f'{"<>"*52}')
-print()
+if isRender:
+    print()
+    print(f'{"<>"*15} Check rendered tree generated from RAMiCEs {"<>"*15}')
+    print()
+    print(RenderTree(dictTree['Root'],style=AsciiStyle()))
+    print()
+    print(f'{"<>"*52}')
+    print()
