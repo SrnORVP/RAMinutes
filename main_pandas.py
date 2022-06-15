@@ -4,7 +4,8 @@ import sys, os
 #-----------------------------------------------------------------------------------------------------------------------
 
 # General Project Name
-strProjID = 'B4' + 'RBD'
+# TODO B4
+# strProjID = 'B4' + 'RBD'
 # strProjID = 'B4' + 'Plant' + '5yr'
 # strProjID = 'B4' + 'Plant' + '5yr' + 'No6'
 # strProjID = 'B4' + 'Plant' + '5yr' + 'Avg'
@@ -13,24 +14,31 @@ strProjID = 'B4' + 'RBD'
 # strProjID = 'B4' + 'Prod' + '5yr' + 'Avg'
 # strProjID = 'B4' + 'Prod' + '20yr'
 # strProjID = 'B4' + 'Prod' + '25yr'
+# arrProjPath = ["/Users/srnorvpsmac/OneDrive - ERM/0575193 Majnoon/4-Working/2-C&E/4 - CnE - 30Sep21"]
+# strRAMiCEs_Input = strProjID + 'RAMinput_05Oct21.xlsx'
+# ----------------------------------------------------------------------------------------------------------------------
+# TODO Majoon
+arrProjPath = ["/Users/srnorvpsmac/OneDrive - ERM/0575193 Majnoon/4-Working/2-C&E/4 - CnE - 30Sep21/Production Availability (for report only)"]
 
-# strProjID = 'Majoon'
-# strProjID = 'Majoon' + 'FR'
+strProjID = 'Majoon' + '_Prod'
+strRAMiCEs_Input = 'RAMinput_Prod_for report.xlsx'
+
+# strProjID = 'Majoon' + '_Plant'
+# strRAMiCEs_Input = 'RAMinput-Plant-06Oct21.xlsx'
+# ----------------------------------------------------------------------------------------------------------------------
+
+# strRAMiRes_Input = strProjID + '-RAMresult' + '.xlsx'
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 isBypassValid = False
 isRender = False
 isRAMiCEs = True
-isRAMiCEs = False
+# isRAMiCEs = False
 
-# strProjID = 'Test'
-
-
+# ----------------------------------------------------------------------------------------------------------------------
 
 # Relative path and File name of user input file
-arrProjPath = ['/Users/srnorvpsmac/OneDrive - ERM/0578129 BorougeRAM/4-Working/2-C&E/13-03May21-Final']
-# arrProjPath = [arrProjPath[0] + '/Report']
-strRAMiCEs_Input = strProjID + '-RAMinput-' + '03May21' + '.xlsx'
-strRAMiRes_Input = strProjID + '-RAMresult' + '.xlsx'
 
 # Name of Output Identifier
 strRAMaros_Output = strProjID + '-RAMaros'
@@ -41,8 +49,6 @@ strRAMiRes_Output = strProjID + '-RAMiRes'
 arrParaPath = ['.']
 strRAMaros_Tmplt = 'RAMaros-Tmplt-' + '03Mar21' + '.xlsm'
 arrRAMiCEs_Param = 'RAMiCEs-Param-' + '03Mar21' + '.xlsx'
-
-
 
 #-----------------------------------------------------------------------------------------------------------------------
 # RAMiRes Param
@@ -76,7 +82,6 @@ if __name__ == '__main__':
 
         import RAMiCEs
         RAMiCEs.__name__
-
 
     elif intUI == 2:
         pass
